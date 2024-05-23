@@ -4,7 +4,7 @@ import socket
 import asyncio
 import json
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Iterator
 
 from ntcore.enums import NetworkTablesType
 from ntcore.topic import Topic
@@ -17,24 +17,52 @@ class NTCore:
     """
     Class representing the core functionality of NTCore.
     """
-    def __init__(self, team_id: int):
+    def __init__(self, team_address: str):
         self.topics: Dict[str, Topic] = {}
         self.socket: socket.socket = None
 
-        self._team_address: str = f"roborio-{team_id}-frc.local"
+        self._team_address: str = team_address or f"roborio-{973}-frc.local"
 
-    async def get_instance_by_team(self, team_address: str = None, port: int = 5810):
+    def __repr__(self):
+        return f"NTCore(team_address='{self._team_address}', topics={list(self.topics.keys())})"
+
+    def __str__(self):
+        return f"NTCore instance for team {self._team_address.split('-')[1]}"
+
+    def __iter__(self) -> Iterator[Topic]:
+        self._iterator_index = 0  # Reset the iterator index
+        return self
+
+    def __next__(self) -> Topic:
+        topics_list = list(self.topics.values())
+        if self._iterator_index >= len(topics_list):
+            raise StopIteration
+        topic = topics_list[self._iterator_index]
+        self._iterator_index += 1
+        return topic
+
+    @classmethod
+    async def get_instance_by_team(cls, arg1, arg2=None):
         """
         Get an instance of NTCore by team address.
 
         Args:
-        - team_address: str, optional
-        - port: int
+            arg1: str (team_address) if arg2 is provided, else str (team_address:port)
+            arg2: int, optional (port)
 
-        Returns: Instance of NTCore
+        Returns:
+            Instance of NTCore
         """
+        if arg2 is None:
+            team_address, port = arg1.split(':')
+            port = int(port)
+        else:
+            team_address = arg1
+            port = arg2
 
-        return await self._connect(team_address or self._team_address, port)
+        instance = cls(team_address)
+        await instance._connect(team_address or instance._team_address, port)
+        return instance
 
     async def _connect(self, address: str, port: int):
         """
