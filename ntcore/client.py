@@ -1,115 +1,47 @@
-import socket
-import json
-from typing import Dict, Any, Iterator
-from ntcore.enums import NetworkTablesType
-from ntcore.topic import Topic
+import asyncio
+
 from ntcore import logger
+from ntcore.entry import NetworkTableEntry
 
-class NTCore:
-    """
-    Class representing the core functionality of NTCore.
-    """
-    def __init__(self):
-        self.topics: Dict[str, Topic] = {}
-        self.socket: socket.socket = None
+class NetworkTablesProtocol:
+    def __init__(self, server_address, server_port):
+        self.server_address = server_address
+        self.server_port = server_port
+        self.reader = None
+        self.writer = None
+        self.entries = {}
 
-    def get_instance_by_team(self, team_address: str, port: int):
-        """
-        Get an instance of NTCore by team address.
+    async def connect(self):
+        self.reader, self.writer = await asyncio.open_connection(self.server_address, self.server_port)
+        logger.info(f"Connected to {self.server_address}:{self.server_port}")
 
-        Args:
-            team_address: str
-            port: int
+    def disconnect(self):
+        if self.writer:
+            self.writer.close()
+            logger.info("Disconnected from server")
 
-        Returns:
-            Instance of NTCore
-        """
-        self._connect(team_address, port)
-        return self
+    async def send_data(self, data):
+        if self.writer:
+            self.writer.write(data)
+            await self.writer.drain()
 
-    def _connect(self, address: str, port: int):
-        """
-        Establish a socket connection to the specified address and port.
+    async def receive_data(self):
+        if self.reader:
+            return await self.reader.read(1024)
 
-        Args:
-        - address: str
-        - port: int
-
-        Returns: None
-        """
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((address, port))
-            logger.info(f"Connected to {address}:{port}")
-        except Exception as e:
-            logger.error(f"Failed to connect to {address}:{port} - {e}")
-            raise
-
-    # def create_topic(self, name: str, type_info: NetworkTablesType, default_value: Any = None) -> Topic:
-    #     """
-    #     Create a topic and add it to the topics dictionary.
-
-    #     Args:
-    #     - name: str
-    #     - type_info: NetworkTablesType
-    #     - default_value: Any
-
-    #     Returns: Instance of Topic
-    #     """
-
-    #     topic = Topic(self, name, type_info, default_value)
-    #     self.topics[name] = topic
-    #     logger.info(f"Created topic: {name}")
-    #     return topic
-
-    def send(self, message: Dict[str, Any]):
-        """
-        Send a message through the socket.
-
-        Args:
-        - message: Dict[str, Any]
-
-        Returns: None
-        """
-        try:
-            self.socket.sendall(json.dumps(message).encode('utf-8'))
-            logger.debug(f"Sent message: {message}")
-        except Exception as e:
-            logger.error(f"Failed to send message - {e}")
-            raise
-
-    def publish_value(self, value: Any):
-        """
-        Publish a value to the subscribers of the topic.
-
-        Args:
-        - value: Any
-
-        Returns: None
-        """
-        message = {
-            'name': self.name,
-            'type': self.type_info.value,
-            'value': value
-        }
-        self.send(message)
-        for callback in self.subscribers:
-            callback(value)
+    def handle_entry_update(self, entry_name, entry_type, value):
+        if entry_name in self.entries:
+            entry = self.entries[entry_name]
+            entry.setValue(value)
+        else:
+            entry = NetworkTableEntry(entry_name, entry_type, value)
+            self.entries[entry_name] = entry
 
     def __repr__(self):
-        return f"NTCore(topics={list(self.topics.keys())})"
+        return f"NetworkTablesProtocol(server_address={self.server_address}, server_port={self.server_port})"
 
     def __str__(self):
-        return "NTCore instance"
+        return f"NetworkTablesProtocol connected to {self.server_address}:{self.server_port}"
 
-    def __iter__(self) -> Iterator[Topic]:
-        self._iterator_index = 0  # Reset the iterator index
-        return self
-
-    def __next__(self) -> Topic:
-        topics_list = list(self.topics.values())
-        if self._iterator_index >= len(topics_list):
-            raise StopIteration
-        topic = topics_list[self._iterator_index]
-        self._iterator_index += 1
-        return topic
+    def __list__(self):
+        return list(self.entries.keys())
