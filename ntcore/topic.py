@@ -7,22 +7,18 @@ from ntcore.enums import NetworkTablesType
 
 logging.basicConfig(level=logging.DEBUG)
 
-
 class Topic:
     """
     Represents a topic in NTCore with methods to subscribe, publish, set value, and publish value. 
-    Includes functionality to handle subscribers and publishing values asynchronously.
+    Includes functionality to handle subscribers and publishing values
     """
-    def __init__(self, ntcore: Any, name: str, type_info: NetworkTablesType, default_value: Any):
-        self.ntcore: Any = ntcore
+    def __init__(self, ntcore, name: str, type_info: NetworkTablesType, default_value: Any):
+        self.ntcore = ntcore
         self.name: str = name
         self.type_info: NetworkTablesType = type_info
         self.default_value: Any = default_value
         self.subscribers: List[Callable[[Any], None]] = []
         self.publisher: bool = False
-
-        if default_value is not None:
-            self.publish_value(default_value)
 
     def __repr__(self):
         return f"Topic(name='{self.name}', type='{self.type_info.name}', default_value={self.default_value}, publisher={self.publisher})"
@@ -57,6 +53,7 @@ class Topic:
         self.subscribers.append(callback)
         if immediate_notify and self.default_value is not None:
             callback(self.default_value)
+        logging.debug(f"Subscribed callback {callback} to topic {self.name}")
 
     def unsubscribe(self, callback: Callable[[Any], None]):
         """
@@ -69,22 +66,22 @@ class Topic:
         Returns: None
         """
         self.subscribers.remove(callback)
+        logging.debug(f"Unsubscribed callback {callback} from topic {self.name}")
 
     def publish(self, properties: Dict[str, Any] = None):
         """
         Set a value for the topic.
 
         Args:
-        - value: Any
+        - properties: Dict[str, Any]
 
-        Raises:
-        - ValueError: If trying to set value on an unpublished topic
-
+    
         Returns: None
         """
         self.publisher = True
         if self.default_value is not None:
             self.publish_value(self.default_value)
+        logging.info(f"Published topic {self.name}")
 
     def unpublish(self):
         """
@@ -95,6 +92,7 @@ class Topic:
         """
         self.publisher = False
         self.subscribers.clear()
+        logging.info(f"Unpublished topic {self.name}")
 
     def set_value(self, value: Any):
         """
@@ -111,10 +109,11 @@ class Topic:
 
         if self.publisher:
             self.publish_value(value)
+            logging.debug(f"Set value {value} for topic {self.name}")
         else:
             raise ValueError("This topic is not published")
 
-    async def publish_value(self, value: Any):
+    def publish_value(self, value: Any):
         """
         Publish a value to the subscribers of the topic.
 
@@ -128,6 +127,7 @@ class Topic:
             'type': self.type_info.value,
             'value': value
         }
-        await self.ntcore.send(message)
+        self.ntcore.send(message)
         for callback in self.subscribers:
             callback(value)
+        logging.debug(f"Published value {value} to topic {self.name}")

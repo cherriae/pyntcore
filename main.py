@@ -1,29 +1,38 @@
 from __future__ import annotations
 
-from typing import Union
-from ntcore.client import NTCore
-from ntcore.enums import NetworkTablesType
+from ntcore import Topic, NTCore, NetworkTablesType
 
-import asyncio
+class Client(NTCore):
+    def __init__(self):
+        super().__init__()
 
+    def run(self) -> Client:
+        self.ntcore_instance = self.get_instance_by_team("localhost", 5810)
+        return self
 
-# Create the autoMode topic w/ a default return value of 'No Auto'
-async def e():
-    team_address: Union[None, str] = "localhost:5810" # if simulation
-    ntcore_instance = await NTCore.get_instance_by_team(team_address)
-    global auto_mode_topic
-    auto_mode_topic = await ntcore_instance.create_topic('/MyTable/autoMode', NetworkTablesType.STRING, 'No Auto')
+    def topic(self) -> None: #path: str, networkTableType: NetworkTablesType, name: str
+        # Add topics
+        auto_mode_topic = self.ntcore_instance.create_topic('/MyTable/autoMode', NetworkTablesType.STRING, 'No Auto')
+        auto = self.ntcore_instance.create_topic('/MyTable/Auto', NetworkTablesType.STRING, 'Auto')    
 
-asyncio.run(e())
+        auto_mode_topic.publish()
+        auto.publish()
 
-# Publish the topic
-auto_mode_topic.publish()
+        # print(auto_mode_topic)
+        # print(repr(auto_mode_topic))
+        # self._print(auto)
 
-# Set a new value
-auto_mode_topic.set_value('25 Ball Auto and Climb')
+        # auto_mode_topic.set_value('25 Ball Auto and Climb')
+        # TODO: fix set_value
 
-# Testing values
-print(auto_mode_topic)
-print(str(auto_mode_topic))
-print(repr(auto_mode_topic))
-print(list(auto_mode_topic))
+        # self._print(auto_mode_topic)
+
+    def _print(self, topic) -> None:
+        print(topic)
+        print(repr(topic))
+        print(list(self.ntcore_instance))
+
+if __name__ == "__main__":
+    e = Client()
+    e.run()
+    e.topic()
