@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from ntcore import Topic, NTCore, NetworkTablesType
+from ntcore.client import NTCore
+from ntcore.enums import NetworkTablesType
 
 class Client(NTCore):
     def __init__(self):
@@ -12,11 +13,11 @@ class Client(NTCore):
 
     def topic(self) -> None: #path: str, networkTableType: NetworkTablesType, name: str
         # Add topics
-        auto_mode_topic = self.ntcore_instance.create_topic('/MyTable/autoMode', NetworkTablesType.STRING, 'No Auto')
-        auto = self.ntcore_instance.create_topic('/MyTable/Auto', NetworkTablesType.STRING, 'Auto')    
+        # auto_mode_topic = self.ntcore_instance.create_topic('/MyTable/autoMode', NetworkTablesType.STRING, 'No Auto')
+        # auto = self.ntcore_instance.create_topic('/MyTable/Auto', NetworkTablesType.STRING, 'Auto')    
 
-        auto_mode_topic.publish()
-        auto.publish()
+        # auto_mode_topic.publish()
+        # auto.publish()
 
         # print(auto_mode_topic)
         # print(repr(auto_mode_topic))
@@ -26,6 +27,7 @@ class Client(NTCore):
         # TODO: fix set_value
 
         # self._print(auto_mode_topic)
+        pass
 
     def _print(self, topic) -> None:
         print(topic)

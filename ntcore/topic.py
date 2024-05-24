@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import logging
 from typing import Dict, Iterator, List, Any, Callable
 
 from ntcore.enums import NetworkTablesType
+from ntcore import logger
 
-logging.basicConfig(level=logging.DEBUG)
 
 class Topic:
     """
@@ -53,7 +52,7 @@ class Topic:
         self.subscribers.append(callback)
         if immediate_notify and self.default_value is not None:
             callback(self.default_value)
-        logging.debug(f"Subscribed callback {callback} to topic {self.name}")
+        logger.debug(f"Subscribed callback {callback} to topic {self.name}")
 
     def unsubscribe(self, callback: Callable[[Any], None]):
         """
@@ -66,7 +65,7 @@ class Topic:
         Returns: None
         """
         self.subscribers.remove(callback)
-        logging.debug(f"Unsubscribed callback {callback} from topic {self.name}")
+        logger.debug(f"Unsubscribed callback {callback} from topic {self.name}")
 
     def publish(self, properties: Dict[str, Any] = None):
         """
@@ -81,7 +80,7 @@ class Topic:
         self.publisher = True
         if self.default_value is not None:
             self.publish_value(self.default_value)
-        logging.info(f"Published topic {self.name}")
+        logger.info(f"Published topic {self.name}")
 
     def unpublish(self):
         """
@@ -92,7 +91,7 @@ class Topic:
         """
         self.publisher = False
         self.subscribers.clear()
-        logging.info(f"Unpublished topic {self.name}")
+        logger.info(f"Unpublished topic {self.name}")
 
     def set_value(self, value: Any):
         """
@@ -109,7 +108,7 @@ class Topic:
 
         if self.publisher:
             self.publish_value(value)
-            logging.debug(f"Set value {value} for topic {self.name}")
+            logger.debug(f"Set value {value} for topic {self.name}")
         else:
             raise ValueError("This topic is not published")
 
@@ -130,4 +129,4 @@ class Topic:
         self.ntcore.send(message)
         for callback in self.subscribers:
             callback(value)
-        logging.debug(f"Published value {value} to topic {self.name}")
+        logger.debug(f"Published value {value} to topic {self.name}")

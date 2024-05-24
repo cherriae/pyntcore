@@ -1,11 +1,9 @@
 import socket
 import json
-import logging
 from typing import Dict, Any, Iterator
 from ntcore.enums import NetworkTablesType
 from ntcore.topic import Topic
-
-logging.basicConfig(level=logging.DEBUG)
+from ntcore import logger
 
 class NTCore:
     """
@@ -42,27 +40,27 @@ class NTCore:
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((address, port))
-            logging.info(f"Connected to {address}:{port}")
+            logger.info(f"Connected to {address}:{port}")
         except Exception as e:
-            logging.error(f"Failed to connect to {address}:{port} - {e}")
+            logger.error(f"Failed to connect to {address}:{port} - {e}")
             raise
 
-    def create_topic(self, name: str, type_info: NetworkTablesType, default_value: Any = None) -> Topic:
-        """
-        Create a topic and add it to the topics dictionary.
+    # def create_topic(self, name: str, type_info: NetworkTablesType, default_value: Any = None) -> Topic:
+    #     """
+    #     Create a topic and add it to the topics dictionary.
 
-        Args:
-        - name: str
-        - type_info: NetworkTablesType
-        - default_value: Any
+    #     Args:
+    #     - name: str
+    #     - type_info: NetworkTablesType
+    #     - default_value: Any
 
-        Returns: Instance of Topic
-        """
+    #     Returns: Instance of Topic
+    #     """
 
-        topic = Topic(self, name, type_info, default_value)
-        self.topics[name] = topic
-        logging.info(f"Created topic: {name}")
-        return topic
+    #     topic = Topic(self, name, type_info, default_value)
+    #     self.topics[name] = topic
+    #     logger.info(f"Created topic: {name}")
+    #     return topic
 
     def send(self, message: Dict[str, Any]):
         """
@@ -75,9 +73,9 @@ class NTCore:
         """
         try:
             self.socket.sendall(json.dumps(message).encode('utf-8'))
-            logging.debug(f"Sent message: {message}")
+            logger.debug(f"Sent message: {message}")
         except Exception as e:
-            logging.error(f"Failed to send message - {e}")
+            logger.error(f"Failed to send message - {e}")
             raise
 
     def publish_value(self, value: Any):
