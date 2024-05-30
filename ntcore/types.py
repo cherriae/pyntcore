@@ -1,13 +1,49 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 import numpy as np
 
 @dataclass
 class BinaryMessageData:
     topicId: int
     serverTime: int
-    typeInfo: ...
-    value: ...
+    typeInfo: List[int, str]
+    value: Union[bool, int, float, str, bytes, bytearray, list]
+
+    def __post_init__(self):
+        # Validate the typeInfo and value types
+        if not isinstance(self.typeInfo, list) or len(self.typeInfo) != 2:
+            raise ValueError("Invalid typeInfo format")
+
+        type_num, type_str = self.typeInfo
+        type_info = NetworkTablesTypeInfo.get_network_tables_type_from_type_num(type_num)
+
+        if type_info == NetworkTablesTypeInfo.kBoolean:
+            if not isinstance(self.value, bool):
+                raise ValueError("Value type mismatch with typeInfo (expected bool)")
+        elif type_info == NetworkTablesTypeInfo.kDouble:
+            if not is_double(self.value):
+                raise ValueError("Value type mismatch with typeInfo (expected double)")
+        elif type_info == NetworkTablesTypeInfo.kInteger:
+            if not isinstance(self.value, int):
+                raise ValueError("Value type mismatch with typeInfo (expected int)")
+        elif type_info == NetworkTablesTypeInfo.kString:
+            if not isinstance(self.value, str):
+                raise ValueError("Value type mismatch with typeInfo (expected string)")
+        elif type_info == NetworkTablesTypeInfo.kArrayBuffer:
+            if not isinstance(self.value, (bytes, bytearray)):
+                raise ValueError("Value type mismatch with typeInfo (expected bytes or bytearray)")
+        elif type_info == NetworkTablesTypeInfo.kBooleanArray:
+            if not isinstance(self.value, list) or not all(isinstance(x, bool) for x in self.value):
+                raise ValueError("Value type mismatch with typeInfo (expected list of bools)")
+        elif type_info == NetworkTablesTypeInfo.kDoubleArray:
+            if not isinstance(self.value, list) or not all(map(is_double, self.value)):
+                raise ValueError("Value type mismatch with typeInfo (expected list of doubles)")
+        elif type_info == NetworkTablesTypeInfo.kIntegerArray:
+            if not isinstance(self.value, list) or not all(isinstance(x, int) for x in self.value):
+                raise ValueError("Value type mismatch with typeInfo (expected list of ints)")
+        elif type_info == NetworkTablesTypeInfo.kStringArray:
+            if not isinstance(self.value, list) or not all(isinstance(x, str) for x in self.value):
+                raise ValueError("Value type mismatch with typeInfo (expected list of strings)")
 
 
 def is_double(x):
